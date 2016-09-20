@@ -7,6 +7,7 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -81,7 +82,7 @@ def main(argv):
     username = ''
     password = ''
     starturl = ''
-    pathtodriver = 'phantomjs.exe'
+    pathtodriver = ''
     try:
         opts, args = getopt.getopt(argv, "hu:p:s:d:", ["username=", "password=", "starturl=", "pathtodriver="])
     except getopt.GetoptError:
@@ -105,9 +106,14 @@ def main(argv):
     if username == '' or password == '' or starturl == '':
         print('test.py -u <username> -p <password> -s <starturl> optional: -d <pathtodriver>')
         sys.exit(2)
-    # browser = webdriver.Firefox()
-    # browser = webdriver.PhantomJS(phantomjs_path)
-    browser = webdriver.Chrome(pathtodriver)
+
+    if 'phantomjs.exe' in pathtodriver:
+        browser = webdriver.PhantomJS(pathtodriver)
+    elif 'chromedriver.exe' in pathtodriver:
+        browser = webdriver.Chrome(pathtodriver)
+    else:
+        browser = webdriver.Firefox()
+
     browser.set_window_size(1400, 1000)
     wait = WebDriverWait(browser, 10)
     browser.get('https://zybooks.zyante.com/#/signin')
@@ -133,10 +139,9 @@ def main(argv):
     # time.sleep(timetowait)
     while ('zybooks' in browser.current_url) and t.isAlive():
         try:
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.centered-activity div div div span'
+            browser.save_screenshot('out.png')
+            completionelemlist = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div.centered-activity div div div span'
                                                                     '.uncompleted-label')))
-            completionelemlist = browser.find_elements_by_css_selector('div.centered-activity div div div span'
-                                                                       '.uncompleted-label')
             elemlist = []
             for completionelem in completionelemlist:
                 tempelem = completionelem.find_element_by_xpath('..')
@@ -159,7 +164,7 @@ def main(argv):
                     print("Handling a Simulate activity")
                     handlesimulateactivity(element)
             print('Finished: ' + browser.current_url)
-        except NoSuchElementException:
+        except TimeoutException:
             print('Nothing to do on this page.')
 
         nextpagebutton = browser.find_element_by_css_selector('a div.navigation-button div.navigation-menu-arrow-down')
@@ -167,6 +172,9 @@ def main(argv):
         # time.sleep(timetowait)
 
     print('Closing now!')
+    file = open('last_url.txt', 'w')
+    file.write(browser.current_url)
+    file.close()
     browser.close()
 
 if __name__ == "__main__":
