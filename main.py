@@ -139,7 +139,6 @@ def main(argv):
     # time.sleep(timetowait)
     while ('zybooks' in browser.current_url) and t.isAlive():
         try:
-            browser.save_screenshot('out.png')
             completionelemlist = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div.centered-activity div div div span'
                                                                     '.uncompleted-label')))
             elemlist = []
